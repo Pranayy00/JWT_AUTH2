@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>JWT Auth Playground</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #070c1a;
+      --surface:  #0f172a;
+      --card:     #141d2e;
+      --border:   #1e2d47;
+      --violet:   #7c3aed;
+      --violet-l: #a78bfa;
+      --amber:    #f59e0b;
+      --green:    #10b981;
+      --red:      #ef4444;
+      --text:     #e2e8f0;
+      --muted:    #64748b;
+      --seg1:     #f43f5e;
+      --seg2:     #a78bfa;
+      --seg3:     #34d399;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--violet);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    header h1 { font-size: 16px; font-weight: 600; letter-spacing: .01em; }
+    header span { font-size: 12px; color: var(--muted); margin-left: 6px; font-family: 'JetBrains Mono', monospace; }
+    .status-dot {
+      margin-left: auto;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; color: var(--muted);
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── LAYOUT ── */
+    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 0; height: calc(100vh - 65px); }
+    .panel { padding: 28px; overflow-y: auto; border-right: 1px solid var(--border); }
+    .panel:last-child { border-right: none; }
+
+    h2 { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+
+    /* ── TABS ── */
+    .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); padding: 4px; border-radius: 10px; }
+    .tab {
+      flex: 1; padding: 8px; border: none; background: transparent;
+      color: var(--muted); font-size: 13px; font-family: 'Inter', sans-serif;
+      border-radius: 7px; cursor: pointer; transition: all .2s; font-weight: 500;
+    }
+    .tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.4); }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── FORM ELEMENTS ── */
+    .field { margin-bottom: 16px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; letter-spacing: .03em; }
+    input {
+      width: 100%; padding: 10px 14px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      transition: border-color .2s, box-shadow .2s;
+      outline: none;
+    }
+    input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124,58,237,.15); }
+    input::placeholder { color: var(--muted); }
+
+    .btn {
+      width: 100%; padding: 11px;
+      background: var(--violet); border: none; border-radius: 8px;
+      color: #fff; font-size: 14px; font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer; transition: all .2s; margin-top: 4px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,.4); }
+    .btn:active { transform: translateY(0); }
+    .btn.loading { opacity: .7; pointer-events: none; }
+    .btn.secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+    .btn.secondary:hover { border-color: var(--violet-l); background: rgba(124,58,237,.08); box-shadow: none; }
+
+    /* ── RESPONSE CARD ── */
+    .response-area { margin-top: 20px; }
+    .response-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; overflow: hidden;
+    }
+    .response-header {
+      padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      font-size: 11px; color: var(--muted);
+    }
+    .badge {
+      padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace;
+    }
+    .badge.ok  { background: rgba(16,185,129,.15); color: var(--green); }
+    .badge.err { background: rgba(239,68,68,.15);  color: var(--red);   }
+    .badge.warn{ background: rgba(245,158,11,.15); color: var(--amber); }
+    pre.response-body {
+      padding: 16px; font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px; line-height: 1.7; color: var(--text);
+      white-space: pre-wrap; word-break: break-all;
+    }
+
+    /* ── TOKEN DISPLAY ── */
+    .token-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px; margin-top: 12px;
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
+      line-height: 1.6; word-break: break-all;
+    }
+    .seg-h { color: var(--seg1); }
+    .seg-p { color: var(--seg2); }
+    .seg-s { color: var(--seg3); }
+    .dot-sep { color: var(--muted); }
+
+    /* ── JWT DECODER ── */
+    .decoder-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .jwt-part {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px; overflow: hidden;
+    }
+    .jwt-part-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
+    .jwt-part.header .jwt-part-label { color: var(--seg1); }
+    .jwt-part.payload .jwt-part-label { color: var(--seg2); }
+    .jwt-part.signature .jwt-part-label { color: var(--seg3); }
+    .jwt-part pre { font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+
+    /* ── PROFILE CARD ── */
+    .profile-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-top: 12px;
+    }
+    .profile-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row .key { color: var(--muted); }
+    .profile-row .val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--violet-l); }
+
+    /* ── TOKEN SECTION ── */
+    .token-manager {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 14px; margin-bottom: 20px;
+    }
+    .token-manager-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .token-manager-header span { font-size: 12px; color: var(--muted); font-weight: 500; }
+    .token-status { font-size: 11px; font-weight: 600; }
+    .token-status.active { color: var(--green); }
+    .token-status.none   { color: var(--red);   }
+    textarea.token-input {
+      width: 100%; padding: 10px 12px; resize: vertical; min-height: 72px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 7px; color: var(--text);
+      font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.5;
+      outline: none; transition: border-color .2s;
+    }
+    textarea.token-input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124,58,237,.15); }
+
+    /* ── HISTORY ── */
+    .log { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
+    .log-entry {
+      display: flex; gap: 10px; align-items: flex-start;
+      padding: 10px 12px; background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; font-size: 12px; cursor: pointer; transition: border-color .15s;
+    }
+    .log-entry:hover { border-color: var(--violet-l); }
+    .log-method { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; min-width: 38px; padding-top: 1px; }
+    .log-method.POST { color: var(--amber); }
+    .log-method.GET  { color: var(--green); }
+    .log-info { flex: 1; }
+    .log-path { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+    .log-time { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+    .log-status { font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
+    .log-status.ok  { color: var(--green); }
+    .log-status.err { color: var(--red); }
+
+    /* ── TIMER BAR (JWT expiry) ── */
+    .expiry-bar-wrap { margin-top: 8px; }
+    .expiry-bar-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+    .expiry-bar-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+    .expiry-bar-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 1s linear, background .5s; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    /* ── EMPTY STATE ── */
+    .empty { text-align: center; padding: 40px 0; color: var(--muted); font-size: 13px; }
+    .empty .icon { font-size: 28px; margin-bottom: 8px; }
+
+    @media (max-width: 768px) {
+      .container { grid-template-columns: 1fr; height: auto; }
+      .panel { border-right: none; border-bottom: 1px solid var(--border); }
+      .decoder-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🔐</div>
+  <h1>JWT Auth Playground <span>localhost:5000</span></h1>
+  <div class="status-dot"><div class="dot"></div> Server</div>
+</header>
+
+<div class="container">
+
+  <!-- ═══════════════ LEFT PANEL ═══════════════ -->
+  <div class="panel">
+    <h2>API Requests</h2>
+
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('register')">Register</button>
+      <button class="tab" onclick="switchTab('login')">Login</button>
+      <button class="tab" onclick="switchTab('profile')">Profile</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="tab-panel active" id="tab-register">
+      <div class="field">
+        <label>EMAIL ADDRESS</label>
+        <input type="email" id="reg-email" placeholder="user@example.com" />
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="reg-password" placeholder="Min. 8 characters" />
+      </div>
+      <button class="btn" id="reg-btn" onclick="doRegister()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        Register User
+      </button>
+      <div class="response-area" id="reg-response"></div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="tab-panel" id="tab-login">
+      <div class="field">
+        <label>EMAIL ADDRESS</label>
+        <input type="email" id="login-email" placeholder="user@example.com" />
+      </div>
+      <div class="field">
+        <label>PASSWORD</label>
+        <input type="password" id="login-password" placeholder="Your password" />
+      </div>
+      <button class="btn" id="login-btn" onclick="doLogin()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        Login & Get Token
+      </button>
+      <div class="response-area" id="login-response"></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="tab-panel" id="tab-profile">
+      <div class="token-manager">
+        <div class="token-manager-header">
+          <span>BEARER TOKEN</span>
+          <span class="token-status none" id="token-status-label">No token</span>
+        </div>
+        <textarea class="token-input" id="manual-token" placeholder="Paste your JWT here, or login to auto-fill…" oninput="onTokenInput()"></textarea>
+        <div class="expiry-bar-wrap" id="expiry-wrap" style="display:none">
+          <div class="expiry-bar-label">
+            <span>Token validity</span>
+            <span id="expiry-countdown">--</span>
+          </div>
+          <div class="expiry-bar-track"><div class="expiry-bar-fill" id="expiry-fill" style="width:100%"></div></div>
+        </div>
+      </div>
+      <button class="btn" id="profile-btn" onclick="doProfile()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Fetch Protected Profile
+      </button>
+      <button class="btn secondary" style="margin-top:8px" onclick="clearToken()">Clear Token</button>
+      <div class="response-area" id="profile-response"></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ RIGHT PANEL ═══════════════ -->
+  <div class="panel">
+    <h2>JWT Decoder & Request Log</h2>
+
+    <!-- Token visualizer -->
+    <div style="margin-bottom:24px">
+      <div id="decoded-empty" class="empty"><div class="icon">🔑</div>Login to see your token decoded here</div>
+      <div id="decoded-content" style="display:none">
+        <div class="token-box" id="token-visual"></div>
+        <div class="decoder-grid">
+          <div class="jwt-part header"><div class="jwt-part-label">Header</div><pre id="dec-header"></pre></div>
+          <div class="jwt-part payload"><div class="jwt-part-label">Payload</div><pre id="dec-payload"></pre></div>
+          <div class="jwt-part signature"><div class="jwt-part-label">Signature</div><pre id="dec-sig"></pre></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Request log -->
+    <h2>Request History</h2>
+    <div id="log-empty" class="empty"><div class="icon">📋</div>Requests will appear here</div>
+    <div class="log" id="log-list"></div>
+  </div>
+
+</div>
+
+<script>
+  const BASE = '';   // empty = same origin; change to 'http://localhost:5000' if needed
+  let currentToken = null;
+  let expiryTimer  = null;
+  let tokenIssued  = null;
+  let tokenExpires = null;
+
+  // ── TAB SWITCHING ──────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      t.classList.toggle('active', ['register','login','profile'][i] === name);
+    });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+  }
+
+  // ── FETCH HELPER ──────────────────────────────
+  async function api(method, path, body, token) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const start = Date.now();
+    try {
+      const res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+      const data = await res.json();
+      addLog(method, path, data, Date.now() - start);
+      return data;
+    } catch (e) {
+      addLog(method, path, { error: e.message }, 0);
+      return { error: e.message };
+    }
+  }
+
+  // ── REGISTER ──────────────────────────────────
+  async function doRegister() {
+    const email    = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    if (!email || !password) { showResponse('reg-response', {message:'Please fill in both fields'}, true); return; }
+    const btn = document.getElementById('reg-btn');
+    btn.classList.add('loading'); btn.textContent = 'Registering…';
+    const data = await api('POST', '/register', { email, password });
+    btn.classList.remove('loading'); btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> Register User`;
+    showResponse('reg-response', data, data.error || data.message?.toLowerCase().includes('exists'));
+  }
+
+  // ── LOGIN ──────────────────────────────────────
+  async function doLogin() {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    if (!email || !password) { showResponse('login-response', {message:'Please fill in both fields'}, true); return; }
+    const btn = document.getElementById('login-btn');
+    btn.classList.add('loading'); btn.textContent = 'Logging in…';
+    const data = await api('POST', '/login', { email, password });
+    btn.classList.remove('loading'); btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Login & Get Token`;
+    const isErr = data.error || !data.token;
+    showResponse('login-response', data, isErr);
+    if (data.token) setToken(data.token);
+  }
+
+  // ── PROFILE ────────────────────────────────────
+  async function doProfile() {
+    const token = document.getElementById('manual-token').value.trim() || currentToken;
+    if (!token) { showResponse('profile-response', {message:'No token — login first or paste one above'}, true); return; }
+    const btn = document.getElementById('profile-btn');
+    btn.classList.add('loading'); btn.textContent = 'Fetching…';
+    const data = await api('GET', '/profile', null, token);
+    btn.classList.remove('loading'); btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Fetch Protected Profile`;
+    const isErr = data.error || data.message?.toLowerCase().includes('invalid') || data.message?.toLowerCase().includes('no token');
+    showResponse('profile-response', data, isErr, true);
+  }
+
+  // ── TOKEN MANAGEMENT ───────────────────────────
+  function setToken(token) {
+    currentToken = token;
+    document.getElementById('manual-token').value = token;
+    document.getElementById('token-status-label').textContent = 'Token active';
+    document.getElementById('token-status-label').className = 'token-status active';
+    decodeToken(token);
+    startExpiryBar(token);
+  }
+
+  function clearToken() {
+    currentToken = null;
+    document.getElementById('manual-token').value = '';
+    document.getElementById('token-status-label').textContent = 'No token';
+    document.getElementById('token-status-label').className = 'token-status none';
+    document.getElementById('decoded-empty').style.display = '';
+    document.getElementById('decoded-content').style.display = 'none';
+    document.getElementById('expiry-wrap').style.display = 'none';
+    clearInterval(expiryTimer);
+  }
+
+  function onTokenInput() {
+    const t = document.getElementById('manual-token').value.trim();
+    if (t && t.split('.').length === 3) {
+      currentToken = t;
+      document.getElementById('token-status-label').textContent = 'Token active';
+      document.getElementById('token-status-label').className = 'token-status active';
+      decodeToken(t);
+      startExpiryBar(t);
+    } else if (!t) {
+      clearToken();
+    }
+  }
+
+  // ── JWT DECODER ────────────────────────────────
+  function b64decode(str) {
+    try {
+      const b = str.replace(/-/g,'+').replace(/_/g,'/');
+      return JSON.parse(atob(b));
+    } catch { return null; }
+  }
+
+  function decodeToken(token) {
+    const parts = token.split('.');
+    if (parts.length !== 3) return;
+    const [h, p, s] = parts;
+    const header  = b64decode(h);
+    const payload = b64decode(p);
+
+    document.getElementById('decoded-empty').style.display = 'none';
+    document.getElementById('decoded-content').style.display = '';
+    document.getElementById('token-visual').innerHTML =
+      `<span class="seg-h">${h}</span><span class="dot-sep">.</span><span class="seg-p">${p}</span><span class="dot-sep">.</span><span class="seg-s">${s}</span>`;
+    document.getElementById('dec-header').textContent  = header  ? JSON.stringify(header,  null, 2) : 'Invalid';
+    document.getElementById('dec-payload').textContent = payload ? JSON.stringify(payload, null, 2) : 'Invalid';
+    document.getElementById('dec-sig').textContent     = s.substring(0,24) + '…\n(signed server-side)';
+  }
+
+  // ── EXPIRY BAR ─────────────────────────────────
+  function startExpiryBar(token) {
+    clearInterval(expiryTimer);
+    const parts   = token.split('.');
+    const payload = b64decode(parts[1]);
+    if (!payload || !payload.exp || !payload.iat) { document.getElementById('expiry-wrap').style.display = 'none'; return; }
+    tokenIssued  = payload.iat * 1000;
+    tokenExpires = payload.exp * 1000;
+    document.getElementById('expiry-wrap').style.display = '';
+    updateExpiryBar();
+    expiryTimer = setInterval(updateExpiryBar, 1000);
+  }
+
+  function updateExpiryBar() {
+    const now      = Date.now();
+    const total    = tokenExpires - tokenIssued;
+    const remaining= tokenExpires - now;
+    const pct      = Math.max(0, remaining / total * 100);
+    const fill     = document.getElementById('expiry-fill');
+    fill.style.width = pct + '%';
+    fill.style.background = pct > 30 ? 'var(--green)' : pct > 10 ? 'var(--amber)' : 'var(--red)';
+    if (remaining <= 0) {
+      document.getElementById('expiry-countdown').textContent = 'Expired';
+      clearInterval(expiryTimer);
+    } else {
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      document.getElementById('expiry-countdown').textContent = `${mins}m ${secs}s left`;
+    }
+  }
+
+  // ── RESPONSE RENDERER ──────────────────────────
+  function showResponse(elId, data, isError, isPrettyProfile) {
+    const el = document.getElementById(elId);
+    const badgeCls = isError ? 'err' : 'ok';
+    const badgeTxt = isError ? 'ERROR' : '200 OK';
+
+    let body = '';
+    if (isPrettyProfile && data.user && !isError) {
+      const u = data.user;
+      body = `<div class="profile-card">
+        <div class="profile-row"><span class="key">id</span><span class="val">${u.id}</span></div>
+        <div class="profile-row"><span class="key">email</span><span class="val">${u.email}</span></div>
+        <div class="profile-row"><span class="key">issued at</span><span class="val">${new Date(u.iat*1000).toLocaleString()}</span></div>
+        <div class="profile-row"><span class="key">expires at</span><span class="val">${new Date(u.exp*1000).toLocaleString()}</span></div>
+        <div class="profile-row"><span class="key">message</span><span class="val" style="color:var(--green)">${data.message}</span></div>
+      </div>`;
+    } else {
+      body = `<pre class="response-body">${JSON.stringify(data, null, 2)}</pre>`;
+    }
+
+    el.innerHTML = `<div class="response-card">
+      <div class="response-header">
+        <span style="font-family:'JetBrains Mono',monospace">response</span>
+        <span class="badge ${badgeCls}">${badgeTxt}</span>
+      </div>
+      ${body}
+    </div>`;
+
+    if (data.token) {
+      el.innerHTML += `<div class="token-box" style="margin-top:10px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace">JWT TOKEN — auto-loaded into Profile tab</div>
+        ${renderTokenVisual(data.token)}
+      </div>`;
+    }
+  }
+
+  function renderTokenVisual(token) {
+    const [h,p,s] = token.split('.');
+    return `<span class="seg-h">${h}</span><span class="dot-sep">.</span><span class="seg-p">${p}</span><span class="dot-sep">.</span><span class="seg-s">${s}</span>`;
+  }
+
+  // ── REQUEST LOG ────────────────────────────────
+  function addLog(method, path, data, ms) {
+    const list = document.getElementById('log-list');
+    document.getElementById('log-empty').style.display = 'none';
+    const isErr  = data.error || data.message?.toLowerCase().includes('invalid') || data.message?.toLowerCase().includes('not found');
+    const entry  = document.createElement('div');
+    entry.className = 'log-entry';
+    entry.innerHTML = `
+      <span class="log-method ${method}">${method}</span>
+      <div class="log-info">
+        <div class="log-path">${path}</div>
+        <div class="log-time">${new Date().toLocaleTimeString()} · ${ms}ms${data.message ? ' · ' + data.message : ''}</div>
+      </div>
+      <span class="log-status ${isErr ? 'err' : 'ok'}">${isErr ? 'ERR' : 'OK'}</span>`;
+    list.prepend(entry);
+  }
+</script>
+</body>
+</html>
