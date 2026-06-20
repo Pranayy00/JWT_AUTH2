@@ -1,556 +1,1240 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>JWT Auth Playground</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>JWT Auth — Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+<style>
+  :root {
+    --brand: #4f46e5;
+    --brand-light: #ede9fe;
+    --brand-dark: #3730a3;
+    --sidebar-w: 240px;
+  }
 
-    :root {
-      --bg:       #070c1a;
-      --surface:  #0f172a;
-      --card:     #141d2e;
-      --border:   #1e2d47;
-      --violet:   #7c3aed;
-      --violet-l: #a78bfa;
-      --amber:    #f59e0b;
-      --green:    #10b981;
-      --red:      #ef4444;
-      --text:     #e2e8f0;
-      --muted:    #64748b;
-      --seg1:     #f43f5e;
-      --seg2:     #a78bfa;
-      --seg3:     #34d399;
-    }
+  * { box-sizing: border-box; }
 
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-      padding: 0;
-    }
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #f5f7fb;
+    margin: 0;
+    min-height: 100vh;
+  }
 
-    /* ── HEADER ── */
-    header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 18px 32px;
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-    }
-    .logo-icon {
-      width: 36px; height: 36px;
-      background: var(--violet);
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-    }
-    header h1 { font-size: 16px; font-weight: 600; letter-spacing: .01em; }
-    header span { font-size: 12px; color: var(--muted); margin-left: 6px; font-family: 'JetBrains Mono', monospace; }
-    .status-dot {
-      margin-left: auto;
-      display: flex; align-items: center; gap: 8px;
-      font-size: 12px; color: var(--muted);
-    }
-    .dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--green);
-      box-shadow: 0 0 6px var(--green);
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+  /* ── AUTH SCREENS ── */
+  .auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    padding: 2rem 1rem;
+  }
 
-    /* ── LAYOUT ── */
-    .container { display: grid; grid-template-columns: 1fr 1fr; gap: 0; height: calc(100vh - 65px); }
-    .panel { padding: 28px; overflow-y: auto; border-right: 1px solid var(--border); }
-    .panel:last-child { border-right: none; }
+  .auth-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.18);
+  }
 
-    h2 { font-size: 11px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+  .auth-logo {
+    width: 48px; height: 48px;
+    background: var(--brand);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.25rem;
+    color: #fff; font-size: 1.4rem;
+  }
 
-    /* ── TABS ── */
-    .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: var(--surface); padding: 4px; border-radius: 10px; }
-    .tab {
-      flex: 1; padding: 8px; border: none; background: transparent;
-      color: var(--muted); font-size: 13px; font-family: 'Inter', sans-serif;
-      border-radius: 7px; cursor: pointer; transition: all .2s; font-weight: 500;
-    }
-    .tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.4); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+  .auth-card h2 { font-size: 1.4rem; font-weight: 700; text-align: center; color: #111; }
+  .auth-card .sub { text-align: center; color: #6b7280; font-size: .9rem; margin-bottom: 1.5rem; }
 
-    /* ── FORM ELEMENTS ── */
-    .field { margin-bottom: 16px; }
-    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; font-weight: 500; letter-spacing: .03em; }
-    input {
-      width: 100%; padding: 10px 14px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); font-size: 14px;
-      font-family: 'Inter', sans-serif;
-      transition: border-color .2s, box-shadow .2s;
-      outline: none;
-    }
-    input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124,58,237,.15); }
-    input::placeholder { color: var(--muted); }
+  .auth-link { color: var(--brand); text-decoration: none; font-weight: 500; }
+  .auth-link:hover { text-decoration: underline; }
 
-    .btn {
-      width: 100%; padding: 11px;
-      background: var(--violet); border: none; border-radius: 8px;
-      color: #fff; font-size: 14px; font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer; transition: all .2s; margin-top: 4px;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn:hover { background: #6d28d9; transform: translateY(-1px); box-shadow: 0 4px 16px rgba(124,58,237,.4); }
-    .btn:active { transform: translateY(0); }
-    .btn.loading { opacity: .7; pointer-events: none; }
-    .btn.secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
-    .btn.secondary:hover { border-color: var(--violet-l); background: rgba(124,58,237,.08); box-shadow: none; }
+  /* ── SIDEBAR + LAYOUT ── */
+  #app { display: flex; min-height: 100vh; }
 
-    /* ── RESPONSE CARD ── */
-    .response-area { margin-top: 20px; }
-    .response-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; overflow: hidden;
-    }
-    .response-header {
-      padding: 10px 14px;
-      display: flex; align-items: center; justify-content: space-between;
-      border-bottom: 1px solid var(--border);
-      font-size: 11px; color: var(--muted);
-    }
-    .badge {
-      padding: 2px 8px; border-radius: 4px;
-      font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace;
-    }
-    .badge.ok  { background: rgba(16,185,129,.15); color: var(--green); }
-    .badge.err { background: rgba(239,68,68,.15);  color: var(--red);   }
-    .badge.warn{ background: rgba(245,158,11,.15); color: var(--amber); }
-    pre.response-body {
-      padding: 16px; font-family: 'JetBrains Mono', monospace;
-      font-size: 12.5px; line-height: 1.7; color: var(--text);
-      white-space: pre-wrap; word-break: break-all;
-    }
+  .sidebar {
+    width: var(--sidebar-w);
+    background: #1e1b4b;
+    color: #c7d2fe;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 100;
+    transition: transform .25s;
+  }
 
-    /* ── TOKEN DISPLAY ── */
-    .token-box {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px; margin-top: 12px;
-      font-family: 'JetBrains Mono', monospace; font-size: 11.5px;
-      line-height: 1.6; word-break: break-all;
-    }
-    .seg-h { color: var(--seg1); }
-    .seg-p { color: var(--seg2); }
-    .seg-s { color: var(--seg3); }
-    .dot-sep { color: var(--muted); }
+  .sidebar-brand {
+    padding: 1.4rem 1.25rem;
+    display: flex; align-items: center; gap: .75rem;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.05rem;
+    text-decoration: none;
+  }
 
-    /* ── JWT DECODER ── */
-    .decoder-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 14px; }
-    .jwt-part {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 12px; overflow: hidden;
-    }
-    .jwt-part-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; margin-bottom: 8px; }
-    .jwt-part.header .jwt-part-label { color: var(--seg1); }
-    .jwt-part.payload .jwt-part-label { color: var(--seg2); }
-    .jwt-part.signature .jwt-part-label { color: var(--seg3); }
-    .jwt-part pre { font-family: 'JetBrains Mono', monospace; font-size: 11px; line-height: 1.6; color: var(--text); white-space: pre-wrap; word-break: break-all; }
+  .sidebar-brand-icon {
+    width: 34px; height: 34px;
+    background: var(--brand);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1rem;
+  }
 
-    /* ── PROFILE CARD ── */
-    .profile-card {
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 10px; padding: 20px; margin-top: 12px;
-    }
-    .profile-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-    .profile-row:last-child { border-bottom: none; }
-    .profile-row .key { color: var(--muted); }
-    .profile-row .val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--violet-l); }
+  .sidebar-nav { padding: .75rem .75rem; flex: 1; overflow-y: auto; }
 
-    /* ── TOKEN SECTION ── */
-    .token-manager {
-      background: var(--card); border: 1px solid var(--border);
-      border-radius: 10px; padding: 14px; margin-bottom: 20px;
-    }
-    .token-manager-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-    .token-manager-header span { font-size: 12px; color: var(--muted); font-weight: 500; }
-    .token-status { font-size: 11px; font-weight: 600; }
-    .token-status.active { color: var(--green); }
-    .token-status.none   { color: var(--red);   }
-    textarea.token-input {
-      width: 100%; padding: 10px 12px; resize: vertical; min-height: 72px;
-      background: var(--surface); border: 1px solid var(--border);
-      border-radius: 7px; color: var(--text);
-      font-family: 'JetBrains Mono', monospace; font-size: 11.5px; line-height: 1.5;
-      outline: none; transition: border-color .2s;
-    }
-    textarea.token-input:focus { border-color: var(--violet); box-shadow: 0 0 0 3px rgba(124,58,237,.15); }
+  .nav-label {
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #6d6aac;
+    padding: .6rem .5rem .25rem;
+    font-weight: 600;
+  }
 
-    /* ── HISTORY ── */
-    .log { margin-top: 6px; display: flex; flex-direction: column; gap: 6px; }
-    .log-entry {
-      display: flex; gap: 10px; align-items: flex-start;
-      padding: 10px 12px; background: var(--card); border: 1px solid var(--border);
-      border-radius: 8px; font-size: 12px; cursor: pointer; transition: border-color .15s;
-    }
-    .log-entry:hover { border-color: var(--violet-l); }
-    .log-method { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; font-weight: 700; min-width: 38px; padding-top: 1px; }
-    .log-method.POST { color: var(--amber); }
-    .log-method.GET  { color: var(--green); }
-    .log-info { flex: 1; }
-    .log-path { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 12px; }
-    .log-time { font-size: 10.5px; color: var(--muted); margin-top: 2px; }
-    .log-status { font-size: 11px; font-weight: 600; font-family: 'JetBrains Mono', monospace; }
-    .log-status.ok  { color: var(--green); }
-    .log-status.err { color: var(--red); }
+  .sidebar-nav .nav-link {
+    color: #a5b4fc;
+    border-radius: 8px;
+    padding: .5rem .75rem;
+    display: flex; align-items: center; gap: .65rem;
+    font-size: .9rem;
+    transition: background .15s, color .15s;
+    margin-bottom: 2px;
+  }
 
-    /* ── TIMER BAR (JWT expiry) ── */
-    .expiry-bar-wrap { margin-top: 8px; }
-    .expiry-bar-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
-    .expiry-bar-track { height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
-    .expiry-bar-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 1s linear, background .5s; }
+  .sidebar-nav .nav-link:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .sidebar-nav .nav-link.active { background: var(--brand); color: #fff; }
+  .sidebar-nav .nav-link i { font-size: 1.05rem; }
 
-    /* ── SCROLLBAR ── */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  .sidebar-footer {
+    padding: 1rem .75rem;
+    border-top: 1px solid rgba(255,255,255,.08);
+    font-size: .82rem;
+    color: #6d6aac;
+  }
 
-    /* ── EMPTY STATE ── */
-    .empty { text-align: center; padding: 40px 0; color: var(--muted); font-size: 13px; }
-    .empty .icon { font-size: 28px; margin-bottom: 8px; }
+  .main-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
 
-    @media (max-width: 768px) {
-      .container { grid-template-columns: 1fr; height: auto; }
-      .panel { border-right: none; border-bottom: 1px solid var(--border); }
-      .decoder-grid { grid-template-columns: 1fr; }
-    }
-  </style>
+  /* ── TOP BAR ── */
+  .topbar {
+    height: 60px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex; align-items: center;
+    padding: 0 1.75rem;
+    gap: 1rem;
+    position: sticky; top: 0; z-index: 50;
+  }
+
+  .topbar-title { font-weight: 700; font-size: 1.05rem; color: #111; flex: 1; }
+
+  .user-avatar {
+    width: 36px; height: 36px;
+    background: var(--brand-light);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--brand); font-weight: 700; font-size: .85rem;
+    cursor: pointer;
+  }
+
+  .role-badge {
+    background: var(--brand-light);
+    color: var(--brand);
+    font-size: .72rem;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid #c7d2fe;
+  }
+
+  /* ── PAGE BODY ── */
+  .page-body { padding: 1.75rem; flex: 1; }
+
+  .page-header { margin-bottom: 1.5rem; }
+  .page-header h3 { font-size: 1.2rem; font-weight: 700; color: #111; margin: 0; }
+  .page-header p { color: #6b7280; font-size: .875rem; margin: .25rem 0 0; }
+
+  /* ── STAT CARDS ── */
+  .stat-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    padding: 1.25rem 1.5rem;
+    display: flex; align-items: center; gap: 1rem;
+  }
+
+  .stat-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+  }
+
+  .stat-card h6 { font-size: .8rem; color: #6b7280; margin: 0; text-transform: uppercase; letter-spacing: .04em; }
+  .stat-card .stat-val { font-size: 1.8rem; font-weight: 700; color: #111; line-height: 1; margin: .25rem 0 0; }
+
+  /* ── CONTENT CARDS ── */
+  .content-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .content-card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex; align-items: center; justify-content: space-between;
+    font-weight: 600; font-size: .9rem; color: #374151;
+  }
+
+  /* ── TABLE ── */
+  .table th { font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: #9ca3af; font-weight: 600; border-bottom: 1px solid #f3f4f6; }
+  .table td { font-size: .875rem; color: #374151; vertical-align: middle; }
+  .table tbody tr:hover { background: #fafafa; }
+
+  /* ── ALERT LOG ── */
+  .log-entry {
+    display: flex; align-items: flex-start; gap: .75rem;
+    padding: .75rem 1.25rem;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: .85rem;
+  }
+  .log-entry:last-child { border: none; }
+  .log-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+  .log-time { color: #9ca3af; font-size: .78rem; white-space: nowrap; }
+
+  /* ── BUTTONS ── */
+  .btn-brand { background: var(--brand); border-color: var(--brand); color: #fff; border-radius: 8px; }
+  .btn-brand:hover { background: var(--brand-dark); border-color: var(--brand-dark); color: #fff; }
+
+  .btn-outline-brand { border-color: var(--brand); color: var(--brand); border-radius: 8px; }
+  .btn-outline-brand:hover { background: var(--brand); color: #fff; }
+
+  /* ── FORM ELEMENTS ── */
+  .form-control, .form-select { border-radius: 8px; border-color: #d1d5db; font-size: .9rem; }
+  .form-control:focus, .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 3px rgba(79,70,229,.12); }
+
+  .form-label { font-size: .85rem; font-weight: 500; color: #374151; }
+
+  .input-group .input-group-text { background: #f9fafb; border-color: #d1d5db; color: #6b7280; border-radius: 8px 0 0 8px; }
+  .input-group .form-control { border-radius: 0 8px 8px 0; }
+
+  /* ── TOAST ── */
+  #toast-container {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    z-index: 9999; display: flex; flex-direction: column; gap: .5rem;
+  }
+
+  .toast-msg {
+    padding: .75rem 1.25rem;
+    border-radius: 10px;
+    font-size: .875rem;
+    font-weight: 500;
+    color: #fff;
+    display: flex; align-items: center; gap: .5rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+    animation: slideIn .25s ease;
+    max-width: 320px;
+  }
+
+  .toast-success { background: #059669; }
+  .toast-error { background: #dc2626; }
+  .toast-info { background: #2563eb; }
+  .toast-warning { background: #d97706; }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ── MISC ── */
+  .badge-role { font-size: .72rem; border-radius: 999px; padding: 3px 10px; }
+  .badge-admin { background: #fef3c7; color: #92400e; }
+  .badge-user  { background: #ede9fe; color: #5b21b6; }
+  .badge-verified { background: #d1fae5; color: #065f46; }
+  .badge-unverified { background: #fee2e2; color: #991b1b; }
+
+  .spinner-brand { color: var(--brand); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main-content { margin-left: 0; }
+  }
+
+  /* ── PROFILE SECTION ── */
+  .profile-avatar-lg {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: var(--brand-light);
+    color: var(--brand);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.8rem; font-weight: 700;
+  }
+
+  /* ── ACTIVITY TIMELINE ── */
+  .activity-item {
+    display: flex; gap: 1rem; padding: .75rem 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: .875rem;
+  }
+  .activity-item:last-child { border: none; }
+  .activity-icon {
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: .85rem;
+  }
+</style>
 </head>
 <body>
 
-<header>
-  <div class="logo-icon">🔐</div>
-  <h1>JWT Auth Playground <span>localhost:5000</span></h1>
-  <div class="status-dot"><div class="dot"></div> Server</div>
-</header>
+<!-- ══════════════════════════════════════════════════════════
+     AUTH VIEWS (shown when not logged in)
+     ══════════════════════════════════════════════════════════ -->
+<div id="auth-view">
 
-<div class="container">
+  <!-- LOGIN -->
+  <div id="login-screen" class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-logo"><i class="bi bi-shield-lock-fill"></i></div>
+      <h2>Sign in to SecureAuth</h2>
+      <p class="sub">Enter your credentials to continue</p>
 
-  <!-- ═══════════════ LEFT PANEL ═══════════════ -->
-  <div class="panel">
-    <h2>API Requests</h2>
+      <div id="login-alert" class="alert d-none py-2 small" role="alert"></div>
 
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('register')">Register</button>
-      <button class="tab" onclick="switchTab('login')">Login</button>
-      <button class="tab" onclick="switchTab('profile')">Profile</button>
-    </div>
-
-    <!-- REGISTER -->
-    <div class="tab-panel active" id="tab-register">
-      <div class="field">
-        <label>EMAIL ADDRESS</label>
-        <input type="email" id="reg-email" placeholder="user@example.com" />
-      </div>
-      <div class="field">
-        <label>PASSWORD</label>
-        <input type="password" id="reg-password" placeholder="Min. 8 characters" />
-      </div>
-      <button class="btn" id="reg-btn" onclick="doRegister()">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-        Register User
-      </button>
-      <div class="response-area" id="reg-response"></div>
-    </div>
-
-    <!-- LOGIN -->
-    <div class="tab-panel" id="tab-login">
-      <div class="field">
-        <label>EMAIL ADDRESS</label>
-        <input type="email" id="login-email" placeholder="user@example.com" />
-      </div>
-      <div class="field">
-        <label>PASSWORD</label>
-        <input type="password" id="login-password" placeholder="Your password" />
-      </div>
-      <button class="btn" id="login-btn" onclick="doLogin()">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        Login & Get Token
-      </button>
-      <div class="response-area" id="login-response"></div>
-    </div>
-
-    <!-- PROFILE -->
-    <div class="tab-panel" id="tab-profile">
-      <div class="token-manager">
-        <div class="token-manager-header">
-          <span>BEARER TOKEN</span>
-          <span class="token-status none" id="token-status-label">No token</span>
-        </div>
-        <textarea class="token-input" id="manual-token" placeholder="Paste your JWT here, or login to auto-fill…" oninput="onTokenInput()"></textarea>
-        <div class="expiry-bar-wrap" id="expiry-wrap" style="display:none">
-          <div class="expiry-bar-label">
-            <span>Token validity</span>
-            <span id="expiry-countdown">--</span>
-          </div>
-          <div class="expiry-bar-track"><div class="expiry-bar-fill" id="expiry-fill" style="width:100%"></div></div>
+      <div class="mb-3">
+        <label class="form-label">Email address</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input type="email" class="form-control" id="login-email" placeholder="you@example.com" />
         </div>
       </div>
-      <button class="btn" id="profile-btn" onclick="doProfile()">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Fetch Protected Profile
+
+      <div class="mb-3">
+        <div class="d-flex justify-content-between">
+          <label class="form-label">Password</label>
+          <a href="#" class="auth-link small" onclick="showScreen('forgot-screen')">Forgot password?</a>
+        </div>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input type="password" class="form-control" id="login-password" placeholder="••••••••" />
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('login-password', this)"><i class="bi bi-eye"></i></button>
+        </div>
+      </div>
+
+      <button class="btn btn-brand w-100 py-2 mb-3" onclick="doLogin()">
+        <span id="login-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+        Sign In
       </button>
-      <button class="btn secondary" style="margin-top:8px" onclick="clearToken()">Clear Token</button>
-      <div class="response-area" id="profile-response"></div>
+
+      <p class="text-center small text-muted mb-0">
+        No account? <a href="#" class="auth-link" onclick="showScreen('register-screen')">Create one</a>
+      </p>
     </div>
   </div>
 
-  <!-- ═══════════════ RIGHT PANEL ═══════════════ -->
-  <div class="panel">
-    <h2>JWT Decoder & Request Log</h2>
+  <!-- REGISTER -->
+  <div id="register-screen" class="auth-wrap d-none">
+    <div class="auth-card">
+      <div class="auth-logo"><i class="bi bi-person-plus-fill"></i></div>
+      <h2>Create an account</h2>
+      <p class="sub">Fill in the details below to get started</p>
 
-    <!-- Token visualizer -->
-    <div style="margin-bottom:24px">
-      <div id="decoded-empty" class="empty"><div class="icon">🔑</div>Login to see your token decoded here</div>
-      <div id="decoded-content" style="display:none">
-        <div class="token-box" id="token-visual"></div>
-        <div class="decoder-grid">
-          <div class="jwt-part header"><div class="jwt-part-label">Header</div><pre id="dec-header"></pre></div>
-          <div class="jwt-part payload"><div class="jwt-part-label">Payload</div><pre id="dec-payload"></pre></div>
-          <div class="jwt-part signature"><div class="jwt-part-label">Signature</div><pre id="dec-sig"></pre></div>
+      <div id="register-alert" class="alert d-none py-2 small" role="alert"></div>
+
+      <div class="mb-3">
+        <label class="form-label">Email address</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input type="email" class="form-control" id="reg-email" placeholder="you@example.com" />
         </div>
       </div>
-    </div>
 
-    <!-- Request log -->
-    <h2>Request History</h2>
-    <div id="log-empty" class="empty"><div class="icon">📋</div>Requests will appear here</div>
-    <div class="log" id="log-list"></div>
+      <div class="mb-3">
+        <label class="form-label">Password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input type="password" class="form-control" id="reg-password" placeholder="Min. 6 characters" />
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('reg-password', this)"><i class="bi bi-eye"></i></button>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">Account role</label>
+        <select class="form-select" id="reg-role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+
+      <button class="btn btn-brand w-100 py-2 mb-3" onclick="doRegister()">
+        <span id="reg-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+        Create Account
+      </button>
+
+      <p class="text-center small text-muted mb-0">
+        Already have an account? <a href="#" class="auth-link" onclick="showScreen('login-screen')">Sign in</a>
+      </p>
+    </div>
   </div>
 
+  <!-- FORGOT PASSWORD -->
+  <div id="forgot-screen" class="auth-wrap d-none">
+    <div class="auth-card">
+      <div class="auth-logo"><i class="bi bi-key-fill"></i></div>
+      <h2>Reset password</h2>
+      <p class="sub">We'll send a reset link to your email address</p>
+
+      <div id="forgot-alert" class="alert d-none py-2 small" role="alert"></div>
+
+      <div class="mb-4">
+        <label class="form-label">Email address</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+          <input type="email" class="form-control" id="forgot-email" placeholder="you@example.com" />
+        </div>
+      </div>
+
+      <button class="btn btn-brand w-100 py-2 mb-3" onclick="doForgot()">
+        <span id="forgot-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+        Send Reset Link
+      </button>
+
+      <p class="text-center small text-muted mb-0">
+        Remember it? <a href="#" class="auth-link" onclick="showScreen('login-screen')">Back to sign in</a>
+      </p>
+    </div>
+  </div>
+
+  <!-- RESET PASSWORD -->
+  <div id="reset-screen" class="auth-wrap d-none">
+    <div class="auth-card">
+      <div class="auth-logo"><i class="bi bi-shield-check-fill"></i></div>
+      <h2>Set new password</h2>
+      <p class="sub">Enter the reset token from your email</p>
+
+      <div id="reset-alert" class="alert d-none py-2 small" role="alert"></div>
+
+      <div class="mb-3">
+        <label class="form-label">Reset token</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-ticket-perforated"></i></span>
+          <input type="text" class="form-control" id="reset-token" placeholder="Paste token from email" />
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label">New password</label>
+        <div class="input-group">
+          <span class="input-group-text"><i class="bi bi-lock"></i></span>
+          <input type="password" class="form-control" id="reset-newpwd" placeholder="Min. 6 characters" />
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePwd('reset-newpwd', this)"><i class="bi bi-eye"></i></button>
+        </div>
+      </div>
+
+      <button class="btn btn-brand w-100 py-2 mb-3" onclick="doReset()">
+        <span id="reset-spinner" class="spinner-border spinner-border-sm me-2 d-none"></span>
+        Update Password
+      </button>
+
+      <p class="text-center small text-muted mb-0">
+        <a href="#" class="auth-link" onclick="showScreen('login-screen')">← Back to sign in</a>
+      </p>
+    </div>
+  </div>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════
+     DASHBOARD (shown when logged in)
+     ══════════════════════════════════════════════════════════ -->
+<div id="dashboard-view" class="d-none">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar" id="sidebar">
+    <a href="#" class="sidebar-brand">
+      <div class="sidebar-brand-icon"><i class="bi bi-shield-lock-fill"></i></div>
+      SecureAuth
+    </a>
+
+    <div class="sidebar-nav">
+      <div class="nav-label">Main</div>
+      <a href="#" class="nav-link active" onclick="switchPage('dashboard', this)">
+        <i class="bi bi-grid-1x2"></i> Dashboard
+      </a>
+      <a href="#" class="nav-link" onclick="switchPage('profile', this)">
+        <i class="bi bi-person-circle"></i> My Profile
+      </a>
+      <a href="#" class="nav-link" onclick="switchPage('activity', this)">
+        <i class="bi bi-clock-history"></i> Login Activity
+      </a>
+      <a href="#" class="nav-link" onclick="switchPage('refresh', this)">
+        <i class="bi bi-arrow-repeat"></i> Refresh Token
+      </a>
+
+      <div class="nav-label mt-2" id="admin-section-label">Admin</div>
+      <a href="#" class="nav-link" id="admin-link-dash" onclick="switchPage('admin-users', this)">
+        <i class="bi bi-people"></i> Manage Users
+      </a>
+      <a href="#" class="nav-link" id="admin-link-log" onclick="switchPage('admin-log', this)">
+        <i class="bi bi-journal-text"></i> Login Logs
+      </a>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <div class="user-avatar" style="width:30px;height:30px;font-size:.75rem;" id="sb-avatar">?</div>
+        <div class="overflow-hidden">
+          <div class="text-white small text-truncate" id="sb-email"></div>
+          <div class="role-badge mt-1" id="sb-role"></div>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-outline-danger w-100 mt-1" onclick="doLogout()">
+        <i class="bi bi-box-arrow-right me-1"></i> Sign out
+      </button>
+    </div>
+  </nav>
+
+  <!-- MAIN AREA -->
+  <div class="main-content">
+
+    <!-- TOP BAR -->
+    <div class="topbar">
+      <button class="btn btn-sm d-md-none me-1" onclick="document.getElementById('sidebar').classList.toggle('open')">
+        <i class="bi bi-list fs-5"></i>
+      </button>
+      <div class="topbar-title" id="topbar-title">Dashboard</div>
+      <span class="role-badge" id="topbar-role"></span>
+      <div class="user-avatar" id="top-avatar" title="My profile" onclick="switchPage('profile')">?</div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- ── DASHBOARD PAGE ── -->
+      <div id="page-dashboard">
+        <div class="page-header">
+          <h3>Overview</h3>
+          <p>Your account at a glance</p>
+        </div>
+
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#ede9fe;">
+                <i class="bi bi-person-check" style="color:#5b21b6;"></i>
+              </div>
+              <div>
+                <h6>Role</h6>
+                <div class="stat-val" id="dash-role" style="font-size:1.15rem;margin-top:4px;">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#d1fae5;">
+                <i class="bi bi-patch-check" style="color:#065f46;"></i>
+              </div>
+              <div>
+                <h6>Status</h6>
+                <div class="stat-val" style="font-size:1.15rem;margin-top:4px;color:#059669;">Verified</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#dbeafe;">
+                <i class="bi bi-clock" style="color:#1d4ed8;"></i>
+              </div>
+              <div>
+                <h6>Token TTL</h6>
+                <div class="stat-val" id="dash-ttl" style="font-size:1.1rem;margin-top:4px;">15m</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#fef3c7;">
+                <i class="bi bi-shield" style="color:#92400e;"></i>
+              </div>
+              <div>
+                <h6>Refresh TTL</h6>
+                <div class="stat-val" style="font-size:1.1rem;margin-top:4px;">7d</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Token Display -->
+        <div class="content-card mb-3">
+          <div class="content-card-header">
+            <span><i class="bi bi-key me-2"></i>Active Tokens</span>
+          </div>
+          <div class="p-3">
+            <label class="form-label text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Access Token (JWT)</label>
+            <div class="input-group mb-3">
+              <input type="password" class="form-control font-monospace small" id="dash-access-token" readonly />
+              <button class="btn btn-outline-secondary" onclick="togglePwd('dash-access-token', this)"><i class="bi bi-eye"></i></button>
+              <button class="btn btn-outline-secondary" onclick="copyVal('dash-access-token')"><i class="bi bi-clipboard"></i></button>
+            </div>
+            <label class="form-label text-muted mb-1" style="font-size:.75rem;text-transform:uppercase;letter-spacing:.05em;">Refresh Token (JWT)</label>
+            <div class="input-group">
+              <input type="password" class="form-control font-monospace small" id="dash-refresh-token" readonly />
+              <button class="btn btn-outline-secondary" onclick="togglePwd('dash-refresh-token', this)"><i class="bi bi-eye"></i></button>
+              <button class="btn btn-outline-secondary" onclick="copyVal('dash-refresh-token')"><i class="bi bi-clipboard"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="content-card">
+          <div class="content-card-header"><i class="bi bi-lightning me-2"></i>Quick Actions</div>
+          <div class="p-3 d-flex flex-wrap gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="switchPage('profile')">
+              <i class="bi bi-person me-1"></i> View Profile
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="switchPage('activity')">
+              <i class="bi bi-clock-history me-1"></i> Login History
+            </button>
+            <button class="btn btn-outline-secondary btn-sm" onclick="doRefreshToken()">
+              <i class="bi bi-arrow-repeat me-1"></i> Refresh Access Token
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PROFILE PAGE ── -->
+      <div id="page-profile" class="d-none">
+        <div class="page-header">
+          <h3>My Profile</h3>
+          <p>Your account information fetched live from <code>/profile</code></p>
+        </div>
+
+        <div class="content-card" style="max-width:520px;">
+          <div class="p-4 text-center border-bottom">
+            <div class="profile-avatar-lg mx-auto mb-3" id="profile-avatar-big">?</div>
+            <h5 id="profile-email-big" class="mb-1">—</h5>
+            <span class="badge-role" id="profile-role-big">—</span>
+          </div>
+
+          <div class="p-4">
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label">User ID</label>
+                <input class="form-control font-monospace" id="profile-id" readonly />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Email address</label>
+                <input class="form-control" id="profile-email-field" readonly />
+              </div>
+              <div class="col-12">
+                <label class="form-label">Role</label>
+                <input class="form-control" id="profile-role-field" readonly />
+              </div>
+            </div>
+
+            <hr class="my-3" />
+            <button class="btn btn-brand btn-sm" onclick="loadProfile()">
+              <i class="bi bi-arrow-clockwise me-1"></i> Refresh profile data
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── MY ACTIVITY PAGE ── -->
+      <div id="page-activity" class="d-none">
+        <div class="page-header">
+          <h3>My Login Activity</h3>
+          <p>Last 20 sign-in events for your account — from <code>/my-activity</code></p>
+        </div>
+
+        <div class="content-card">
+          <div class="content-card-header">
+            <span><i class="bi bi-clock-history me-2"></i>Recent Sessions</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="loadMyActivity()">
+              <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+          </div>
+          <div id="activity-list" class="p-3">
+            <div class="text-muted small text-center py-3">Loading…</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── REFRESH TOKEN PAGE ── -->
+      <div id="page-refresh" class="d-none">
+        <div class="page-header">
+          <h3>Refresh Access Token</h3>
+          <p>Use your refresh token to generate a new access token — hits <code>/refresh-token</code></p>
+        </div>
+
+        <div class="content-card" style="max-width:560px;">
+          <div class="p-4">
+            <div class="mb-3">
+              <label class="form-label">Current Refresh Token</label>
+              <textarea class="form-control font-monospace small" id="manual-refresh-token" rows="4" placeholder="Paste your refresh token here…"></textarea>
+            </div>
+            <button class="btn btn-brand" onclick="doRefreshToken(true)">
+              <i class="bi bi-arrow-repeat me-2"></i>Get New Access Token
+            </button>
+
+            <div id="new-access-token-box" class="mt-3 d-none">
+              <hr />
+              <label class="form-label">New Access Token</label>
+              <div class="input-group">
+                <input type="text" class="form-control font-monospace small" id="new-access-token-val" readonly />
+                <button class="btn btn-outline-secondary" onclick="copyVal('new-access-token-val')"><i class="bi bi-clipboard"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADMIN: MANAGE USERS ── -->
+      <div id="page-admin-users" class="d-none">
+        <div class="page-header">
+          <h3>Manage Users</h3>
+          <p>All registered users — from <code>/admin/dashboard</code></p>
+        </div>
+
+        <div class="content-card">
+          <div class="content-card-header">
+            <span><i class="bi bi-people me-2"></i>User Registry</span>
+            <div class="d-flex gap-2 align-items-center">
+              <input type="text" class="form-control form-control-sm" id="user-search" placeholder="Search email…" oninput="filterUsers()" style="width:180px;" />
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadAdminDash()">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Verified</th>
+                </tr>
+              </thead>
+              <tbody id="admin-users-body">
+                <tr><td colspan="4" class="text-center text-muted py-4">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── ADMIN: LOGIN LOGS ── -->
+      <div id="page-admin-log" class="d-none">
+        <div class="page-header">
+          <h3>Login Logs</h3>
+          <p>All login events — from <code>/admin/login-activity</code></p>
+        </div>
+
+        <div class="row g-3 mb-3">
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#dbeafe;"><i class="bi bi-door-open" style="color:#1d4ed8;"></i></div>
+              <div>
+                <h6>Total Events</h6>
+                <div class="stat-val" id="log-total">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#d1fae5;"><i class="bi bi-check-circle" style="color:#059669;"></i></div>
+              <div>
+                <h6>Successful</h6>
+                <div class="stat-val" id="log-success">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#fee2e2;"><i class="bi bi-x-circle" style="color:#dc2626;"></i></div>
+              <div>
+                <h6>Failed</h6>
+                <div class="stat-val" id="log-fail">—</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="stat-card">
+              <div class="stat-icon" style="background:#fef3c7;"><i class="bi bi-globe" style="color:#92400e;"></i></div>
+              <div>
+                <h6>Unique IPs</h6>
+                <div class="stat-val" id="log-ips">—</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="content-card">
+          <div class="content-card-header">
+            <span><i class="bi bi-journal-text me-2"></i>All Events</span>
+            <div class="d-flex gap-2">
+              <select class="form-select form-select-sm" id="log-filter" onchange="renderLogs()" style="width:130px;">
+                <option value="all">All events</option>
+                <option value="success">Success only</option>
+                <option value="failed">Failed only</option>
+              </select>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadAdminLog()">
+                <i class="bi bi-arrow-clockwise"></i>
+              </button>
+            </div>
+          </div>
+          <div id="log-list"></div>
+        </div>
+      </div>
+
+    </div><!-- page-body -->
+  </div><!-- main-content -->
+</div><!-- dashboard-view -->
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ══════════════════════════════════════════════════════════ -->
 <script>
-  const BASE = '';   // empty = same origin; change to 'http://localhost:5000' if needed
-  let currentToken = null;
-  let expiryTimer  = null;
-  let tokenIssued  = null;
-  let tokenExpires = null;
+/* ─── CONFIG ────────────────────────────────────────────────── */
+const API = "http://localhost:5000";
 
-  // ── TAB SWITCHING ──────────────────────────────
-  function switchTab(name) {
-    document.querySelectorAll('.tab').forEach((t,i) => {
-      t.classList.toggle('active', ['register','login','profile'][i] === name);
+/* ─── STATE ─────────────────────────────────────────────────── */
+let state = {
+  accessToken  : null,
+  refreshToken : null,
+  user         : null,         // { id, email, role }
+  allLogs      : [],
+  allUsers     : [],
+};
+
+/* ─── UTILS ─────────────────────────────────────────────────── */
+function toast(msg, type = "info") {
+  const c = document.getElementById("toast-container");
+  const icons = { success: "bi-check-circle-fill", error: "bi-x-circle-fill", info: "bi-info-circle-fill", warning: "bi-exclamation-triangle-fill" };
+  const el = document.createElement("div");
+  el.className = `toast-msg toast-${type}`;
+  el.innerHTML = `<i class="bi ${icons[type] || icons.info}"></i> ${msg}`;
+  c.appendChild(el);
+  setTimeout(() => el.remove(), 3800);
+}
+
+function showAlert(id, msg, type = "danger") {
+  const el = document.getElementById(id);
+  el.className = `alert alert-${type} py-2 small`;
+  el.textContent = msg;
+  el.classList.remove("d-none");
+}
+
+function hideAlert(id) {
+  document.getElementById(id)?.classList.add("d-none");
+}
+
+function setLoading(spinnerId, state) {
+  document.getElementById(spinnerId)?.classList.toggle("d-none", !state);
+}
+
+function togglePwd(inputId, btn) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const show = el.type === "password";
+  el.type = show ? "text" : "password";
+  btn.innerHTML = show ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+}
+
+function copyVal(inputId) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  navigator.clipboard.writeText(el.value).then(() => toast("Copied to clipboard", "success"));
+}
+
+function initials(email) {
+  return email ? email.slice(0, 2).toUpperCase() : "?";
+}
+
+function timeSince(ts) {
+  if (!ts) return "—";
+  const diff = Date.now() - new Date(ts).getTime();
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.floor(h / 24)}d ago`;
+}
+
+/* ─── AUTH SCREEN SWITCHING ─────────────────────────────────── */
+const authScreens = ["login-screen", "register-screen", "forgot-screen", "reset-screen"];
+
+function showScreen(id) {
+  authScreens.forEach(s => document.getElementById(s)?.classList.add("d-none"));
+  document.getElementById(id)?.classList.remove("d-none");
+}
+
+/* ─── API CALLS ─────────────────────────────────────────────── */
+async function apiCall(method, path, body = null, auth = false) {
+  const headers = { "Content-Type": "application/json" };
+  if (auth && state.accessToken) headers["Authorization"] = `Bearer ${state.accessToken}`;
+  try {
+    const res = await fetch(`${API}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
     });
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('tab-' + name).classList.add('active');
+    const data = await res.json();
+    return { ok: res.ok, status: res.status, data };
+  } catch (e) {
+    return { ok: false, status: 0, data: { message: "Cannot connect to server. Make sure the backend is running on " + API } };
   }
+}
 
-  // ── FETCH HELPER ──────────────────────────────
-  async function api(method, path, body, token) {
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = 'Bearer ' + token;
-    const start = Date.now();
-    try {
-      const res = await fetch(BASE + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
-      const data = await res.json();
-      addLog(method, path, data, Date.now() - start);
-      return data;
-    } catch (e) {
-      addLog(method, path, { error: e.message }, 0);
-      return { error: e.message };
+/* ─── REGISTER ───────────────────────────────────────────────── */
+async function doRegister() {
+  hideAlert("register-alert");
+  const email    = document.getElementById("reg-email").value.trim();
+  const password = document.getElementById("reg-password").value;
+  const role     = document.getElementById("reg-role").value;
+
+  if (!email || !password) return showAlert("register-alert", "Email and password are required.");
+  if (password.length < 6) return showAlert("register-alert", "Password must be at least 6 characters.");
+
+  setLoading("reg-spinner", true);
+  const r = await apiCall("POST", "/register", { email, password, role });
+  setLoading("reg-spinner", false);
+
+  if (r.ok) {
+    showAlert("register-alert", "✓ " + r.data.message, "success");
+    toast("Account created! Check your email.", "success");
+  } else {
+    showAlert("register-alert", r.data.message || "Registration failed.");
+  }
+}
+
+/* ─── LOGIN ──────────────────────────────────────────────────── */
+async function doLogin() {
+  hideAlert("login-alert");
+  const email    = document.getElementById("login-email").value.trim();
+  const password = document.getElementById("login-password").value;
+
+  if (!email || !password) return showAlert("login-alert", "Email and password are required.");
+
+  setLoading("login-spinner", true);
+  const r = await apiCall("POST", "/login", { email, password });
+  setLoading("login-spinner", false);
+
+  if (r.ok) {
+    state.accessToken  = r.data.accessToken;
+    state.refreshToken = r.data.refreshToken;
+    await loadProfile();           // fetch /profile to get user obj
+    enterDashboard();
+    toast("Welcome back, " + email.split("@")[0] + "!", "success");
+  } else {
+    showAlert("login-alert", r.data.message || "Login failed.");
+  }
+}
+
+/* ─── FORGOT PASSWORD ────────────────────────────────────────── */
+async function doForgot() {
+  hideAlert("forgot-alert");
+  const email = document.getElementById("forgot-email").value.trim();
+  if (!email) return showAlert("forgot-alert", "Email is required.");
+
+  setLoading("forgot-spinner", true);
+  const r = await apiCall("POST", "/forgot-password", { email });
+  setLoading("forgot-spinner", false);
+
+  if (r.ok || r.status === 200) {
+    showAlert("forgot-alert", "✓ " + r.data.message, "success");
+    toast("Reset link sent (if that email exists)", "info");
+  } else {
+    showAlert("forgot-alert", r.data.message || "Something went wrong.");
+  }
+}
+
+/* ─── RESET PASSWORD ─────────────────────────────────────────── */
+async function doReset() {
+  hideAlert("reset-alert");
+  const token       = document.getElementById("reset-token").value.trim();
+  const newPassword = document.getElementById("reset-newpwd").value;
+
+  if (!token || !newPassword) return showAlert("reset-alert", "All fields are required.");
+  if (newPassword.length < 6) return showAlert("reset-alert", "Password must be at least 6 characters.");
+
+  setLoading("reset-spinner", true);
+  const r = await apiCall("POST", "/reset-password", { token, newPassword });
+  setLoading("reset-spinner", false);
+
+  if (r.ok) {
+    showAlert("reset-alert", "✓ " + r.data.message, "success");
+    toast("Password updated! Sign in now.", "success");
+    setTimeout(() => showScreen("login-screen"), 2000);
+  } else {
+    showAlert("reset-alert", r.data.message || "Reset failed.");
+  }
+}
+
+/* ─── LOGOUT ─────────────────────────────────────────────────── */
+async function doLogout() {
+  if (state.refreshToken) await apiCall("POST", "/logout", { refreshToken: state.refreshToken });
+  state = { accessToken: null, refreshToken: null, user: null, allLogs: [], allUsers: [] };
+  document.getElementById("dashboard-view").classList.add("d-none");
+  document.getElementById("auth-view").classList.remove("d-none");
+  showScreen("login-screen");
+  toast("Signed out successfully.", "info");
+}
+
+/* ─── REFRESH TOKEN ──────────────────────────────────────────── */
+async function doRefreshToken(manual = false) {
+  const rt = manual
+    ? document.getElementById("manual-refresh-token").value.trim()
+    : state.refreshToken;
+
+  if (!rt) { toast("No refresh token available.", "error"); return; }
+
+  const r = await apiCall("POST", "/refresh-token", { refreshToken: rt });
+
+  if (r.ok) {
+    state.accessToken = r.data.accessToken;
+    document.getElementById("dash-access-token").value = r.data.accessToken;
+
+    if (manual) {
+      document.getElementById("new-access-token-val").value = r.data.accessToken;
+      document.getElementById("new-access-token-box").classList.remove("d-none");
     }
+    toast("Access token refreshed!", "success");
+  } else {
+    toast(r.data.message || "Token refresh failed.", "error");
+  }
+}
+
+/* ─── LOAD PROFILE ───────────────────────────────────────────── */
+async function loadProfile() {
+  const r = await apiCall("GET", "/profile", null, true);
+  if (r.ok && r.data.user) {
+    state.user = r.data.user;
+    const u = state.user;
+
+    // Sidebar
+    document.getElementById("sb-avatar").textContent  = initials(u.email);
+    document.getElementById("sb-email").textContent   = u.email;
+    document.getElementById("sb-role").textContent    = u.role;
+    document.getElementById("topbar-role").textContent = u.role;
+    document.getElementById("top-avatar").textContent  = initials(u.email);
+
+    // Profile page
+    document.getElementById("profile-avatar-big").textContent = initials(u.email);
+    document.getElementById("profile-email-big").textContent  = u.email;
+    document.getElementById("profile-role-big").textContent   = u.role;
+    document.getElementById("profile-role-big").className = "badge-role badge-" + (u.role === "admin" ? "admin" : "user");
+    document.getElementById("profile-id").value         = u.id;
+    document.getElementById("profile-email-field").value = u.email;
+    document.getElementById("profile-role-field").value  = u.role;
+
+    // Dashboard
+    document.getElementById("dash-role").textContent = u.role;
+    document.getElementById("dash-access-token").value  = state.accessToken  || "";
+    document.getElementById("dash-refresh-token").value = state.refreshToken || "";
+
+    // Show/hide admin nav
+    const isAdmin = u.role === "admin";
+    document.getElementById("admin-section-label").style.display = isAdmin ? "" : "none";
+    document.getElementById("admin-link-dash").style.display     = isAdmin ? "" : "none";
+    document.getElementById("admin-link-log").style.display      = isAdmin ? "" : "none";
+  } else if (r.status === 401) {
+    toast("Session expired. Please sign in again.", "error");
+    doLogout();
+  }
+}
+
+/* ─── LOAD MY ACTIVITY ───────────────────────────────────────── */
+async function loadMyActivity() {
+  document.getElementById("activity-list").innerHTML = '<div class="text-muted small text-center py-3">Loading…</div>';
+  const r = await apiCall("GET", "/my-activity", null, true);
+  if (!r.ok) {
+    document.getElementById("activity-list").innerHTML = `<div class="text-danger small p-3">${r.data.message}</div>`;
+    return;
+  }
+  const items = r.data.activity || [];
+  if (!items.length) {
+    document.getElementById("activity-list").innerHTML = '<div class="text-muted small text-center py-3">No login events found.</div>';
+    return;
   }
 
-  // ── REGISTER ──────────────────────────────────
-  async function doRegister() {
-    const email    = document.getElementById('reg-email').value.trim();
-    const password = document.getElementById('reg-password').value;
-    if (!email || !password) { showResponse('reg-response', {message:'Please fill in both fields'}, true); return; }
-    const btn = document.getElementById('reg-btn');
-    btn.classList.add('loading'); btn.textContent = 'Registering…';
-    const data = await api('POST', '/register', { email, password });
-    btn.classList.remove('loading'); btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> Register User`;
-    showResponse('reg-response', data, data.error || data.message?.toLowerCase().includes('exists'));
-  }
-
-  // ── LOGIN ──────────────────────────────────────
-  async function doLogin() {
-    const email    = document.getElementById('login-email').value.trim();
-    const password = document.getElementById('login-password').value;
-    if (!email || !password) { showResponse('login-response', {message:'Please fill in both fields'}, true); return; }
-    const btn = document.getElementById('login-btn');
-    btn.classList.add('loading'); btn.textContent = 'Logging in…';
-    const data = await api('POST', '/login', { email, password });
-    btn.classList.remove('loading'); btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Login & Get Token`;
-    const isErr = data.error || !data.token;
-    showResponse('login-response', data, isErr);
-    if (data.token) setToken(data.token);
-  }
-
-  // ── PROFILE ────────────────────────────────────
-  async function doProfile() {
-    const token = document.getElementById('manual-token').value.trim() || currentToken;
-    if (!token) { showResponse('profile-response', {message:'No token — login first or paste one above'}, true); return; }
-    const btn = document.getElementById('profile-btn');
-    btn.classList.add('loading'); btn.textContent = 'Fetching…';
-    const data = await api('GET', '/profile', null, token);
-    btn.classList.remove('loading'); btn.innerHTML = `<svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Fetch Protected Profile`;
-    const isErr = data.error || data.message?.toLowerCase().includes('invalid') || data.message?.toLowerCase().includes('no token');
-    showResponse('profile-response', data, isErr, true);
-  }
-
-  // ── TOKEN MANAGEMENT ───────────────────────────
-  function setToken(token) {
-    currentToken = token;
-    document.getElementById('manual-token').value = token;
-    document.getElementById('token-status-label').textContent = 'Token active';
-    document.getElementById('token-status-label').className = 'token-status active';
-    decodeToken(token);
-    startExpiryBar(token);
-  }
-
-  function clearToken() {
-    currentToken = null;
-    document.getElementById('manual-token').value = '';
-    document.getElementById('token-status-label').textContent = 'No token';
-    document.getElementById('token-status-label').className = 'token-status none';
-    document.getElementById('decoded-empty').style.display = '';
-    document.getElementById('decoded-content').style.display = 'none';
-    document.getElementById('expiry-wrap').style.display = 'none';
-    clearInterval(expiryTimer);
-  }
-
-  function onTokenInput() {
-    const t = document.getElementById('manual-token').value.trim();
-    if (t && t.split('.').length === 3) {
-      currentToken = t;
-      document.getElementById('token-status-label').textContent = 'Token active';
-      document.getElementById('token-status-label').className = 'token-status active';
-      decodeToken(t);
-      startExpiryBar(t);
-    } else if (!t) {
-      clearToken();
-    }
-  }
-
-  // ── JWT DECODER ────────────────────────────────
-  function b64decode(str) {
-    try {
-      const b = str.replace(/-/g,'+').replace(/_/g,'/');
-      return JSON.parse(atob(b));
-    } catch { return null; }
-  }
-
-  function decodeToken(token) {
-    const parts = token.split('.');
-    if (parts.length !== 3) return;
-    const [h, p, s] = parts;
-    const header  = b64decode(h);
-    const payload = b64decode(p);
-
-    document.getElementById('decoded-empty').style.display = 'none';
-    document.getElementById('decoded-content').style.display = '';
-    document.getElementById('token-visual').innerHTML =
-      `<span class="seg-h">${h}</span><span class="dot-sep">.</span><span class="seg-p">${p}</span><span class="dot-sep">.</span><span class="seg-s">${s}</span>`;
-    document.getElementById('dec-header').textContent  = header  ? JSON.stringify(header,  null, 2) : 'Invalid';
-    document.getElementById('dec-payload').textContent = payload ? JSON.stringify(payload, null, 2) : 'Invalid';
-    document.getElementById('dec-sig').textContent     = s.substring(0,24) + '…\n(signed server-side)';
-  }
-
-  // ── EXPIRY BAR ─────────────────────────────────
-  function startExpiryBar(token) {
-    clearInterval(expiryTimer);
-    const parts   = token.split('.');
-    const payload = b64decode(parts[1]);
-    if (!payload || !payload.exp || !payload.iat) { document.getElementById('expiry-wrap').style.display = 'none'; return; }
-    tokenIssued  = payload.iat * 1000;
-    tokenExpires = payload.exp * 1000;
-    document.getElementById('expiry-wrap').style.display = '';
-    updateExpiryBar();
-    expiryTimer = setInterval(updateExpiryBar, 1000);
-  }
-
-  function updateExpiryBar() {
-    const now      = Date.now();
-    const total    = tokenExpires - tokenIssued;
-    const remaining= tokenExpires - now;
-    const pct      = Math.max(0, remaining / total * 100);
-    const fill     = document.getElementById('expiry-fill');
-    fill.style.width = pct + '%';
-    fill.style.background = pct > 30 ? 'var(--green)' : pct > 10 ? 'var(--amber)' : 'var(--red)';
-    if (remaining <= 0) {
-      document.getElementById('expiry-countdown').textContent = 'Expired';
-      clearInterval(expiryTimer);
-    } else {
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-      document.getElementById('expiry-countdown').textContent = `${mins}m ${secs}s left`;
-    }
-  }
-
-  // ── RESPONSE RENDERER ──────────────────────────
-  function showResponse(elId, data, isError, isPrettyProfile) {
-    const el = document.getElementById(elId);
-    const badgeCls = isError ? 'err' : 'ok';
-    const badgeTxt = isError ? 'ERROR' : '200 OK';
-
-    let body = '';
-    if (isPrettyProfile && data.user && !isError) {
-      const u = data.user;
-      body = `<div class="profile-card">
-        <div class="profile-row"><span class="key">id</span><span class="val">${u.id}</span></div>
-        <div class="profile-row"><span class="key">email</span><span class="val">${u.email}</span></div>
-        <div class="profile-row"><span class="key">issued at</span><span class="val">${new Date(u.iat*1000).toLocaleString()}</span></div>
-        <div class="profile-row"><span class="key">expires at</span><span class="val">${new Date(u.exp*1000).toLocaleString()}</span></div>
-        <div class="profile-row"><span class="key">message</span><span class="val" style="color:var(--green)">${data.message}</span></div>
-      </div>`;
-    } else {
-      body = `<pre class="response-body">${JSON.stringify(data, null, 2)}</pre>`;
-    }
-
-    el.innerHTML = `<div class="response-card">
-      <div class="response-header">
-        <span style="font-family:'JetBrains Mono',monospace">response</span>
-        <span class="badge ${badgeCls}">${badgeTxt}</span>
+  document.getElementById("activity-list").innerHTML = items.map(a => `
+    <div class="activity-item">
+      <div class="activity-icon" style="background:${a.success ? "#d1fae5" : "#fee2e2"};">
+        <i class="bi bi-${a.success ? "check-circle-fill" : "x-circle-fill"}" style="color:${a.success ? "#059669" : "#dc2626"}; font-size:.9rem;"></i>
       </div>
-      ${body}
-    </div>`;
-
-    if (data.token) {
-      el.innerHTML += `<div class="token-box" style="margin-top:10px">
-        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-family:'JetBrains Mono',monospace">JWT TOKEN — auto-loaded into Profile tab</div>
-        ${renderTokenVisual(data.token)}
-      </div>`;
-    }
-  }
-
-  function renderTokenVisual(token) {
-    const [h,p,s] = token.split('.');
-    return `<span class="seg-h">${h}</span><span class="dot-sep">.</span><span class="seg-p">${p}</span><span class="dot-sep">.</span><span class="seg-s">${s}</span>`;
-  }
-
-  // ── REQUEST LOG ────────────────────────────────
-  function addLog(method, path, data, ms) {
-    const list = document.getElementById('log-list');
-    document.getElementById('log-empty').style.display = 'none';
-    const isErr  = data.error || data.message?.toLowerCase().includes('invalid') || data.message?.toLowerCase().includes('not found');
-    const entry  = document.createElement('div');
-    entry.className = 'log-entry';
-    entry.innerHTML = `
-      <span class="log-method ${method}">${method}</span>
-      <div class="log-info">
-        <div class="log-path">${path}</div>
-        <div class="log-time">${new Date().toLocaleTimeString()} · ${ms}ms${data.message ? ' · ' + data.message : ''}</div>
+      <div class="flex-grow-1 overflow-hidden">
+        <div class="fw-500 small text-truncate">${a.success ? "Successful login" : "Failed login attempt"}</div>
+        <div class="text-muted" style="font-size:.78rem;">
+          <i class="bi bi-geo-alt me-1"></i>${a.ip}
+          &nbsp;·&nbsp;
+          <span title="${a.userAgent}">${(a.userAgent || "").slice(0, 40)}…</span>
+        </div>
       </div>
-      <span class="log-status ${isErr ? 'err' : 'ok'}">${isErr ? 'ERR' : 'OK'}</span>`;
-    list.prepend(entry);
+      <div class="log-time">${timeSince(a.timestamp)}</div>
+    </div>
+  `).join("");
+}
+
+/* ─── LOAD ADMIN DASHBOARD ───────────────────────────────────── */
+async function loadAdminDash() {
+  document.getElementById("admin-users-body").innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4">Loading…</td></tr>';
+  const r = await apiCall("GET", "/admin/dashboard", null, true);
+  if (!r.ok) {
+    document.getElementById("admin-users-body").innerHTML = `<tr><td colspan="4" class="text-danger p-3">${r.data.message}</td></tr>`;
+    return;
   }
+  state.allUsers = r.data.users || [];
+  renderUsers();
+}
+
+function renderUsers() {
+  const q = (document.getElementById("user-search")?.value || "").toLowerCase();
+  const rows = state.allUsers.filter(u => u.email.toLowerCase().includes(q));
+  if (!rows.length) {
+    document.getElementById("admin-users-body").innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No users found.</td></tr>';
+    return;
+  }
+  document.getElementById("admin-users-body").innerHTML = rows.map(u => `
+    <tr>
+      <td class="font-monospace text-muted small">${u.id}</td>
+      <td>${u.email}</td>
+      <td><span class="badge-role badge-${u.role === "admin" ? "admin" : "user"}">${u.role}</span></td>
+      <td><span class="badge-role badge-${u.isVerified ? "verified" : "unverified"}">${u.isVerified ? "✓ Verified" : "✗ Unverified"}</span></td>
+    </tr>
+  `).join("");
+}
+
+function filterUsers() { renderUsers(); }
+
+/* ─── LOAD ADMIN LOGIN LOG ────────────────────────────────────── */
+async function loadAdminLog() {
+  document.getElementById("log-list").innerHTML = '<div class="text-muted small text-center py-4">Loading…</div>';
+  const r = await apiCall("GET", "/admin/login-activity?limit=100", null, true);
+  if (!r.ok) {
+    document.getElementById("log-list").innerHTML = `<div class="text-danger p-3 small">${r.data.message}</div>`;
+    return;
+  }
+  state.allLogs = r.data.data || [];
+  const total   = r.data.total || 0;
+  const success = state.allLogs.filter(l => l.success).length;
+  const failed  = state.allLogs.filter(l => !l.success).length;
+  const ips     = new Set(state.allLogs.map(l => l.ip)).size;
+
+  document.getElementById("log-total").textContent   = total;
+  document.getElementById("log-success").textContent = success;
+  document.getElementById("log-fail").textContent    = failed;
+  document.getElementById("log-ips").textContent     = ips;
+
+  renderLogs();
+}
+
+function renderLogs() {
+  const filter = document.getElementById("log-filter")?.value || "all";
+  const logs = state.allLogs.filter(l => {
+    if (filter === "success") return l.success;
+    if (filter === "failed")  return !l.success;
+    return true;
+  });
+
+  if (!logs.length) {
+    document.getElementById("log-list").innerHTML = '<div class="text-muted small text-center py-4">No events.</div>';
+    return;
+  }
+
+  document.getElementById("log-list").innerHTML = logs.map(l => `
+    <div class="log-entry">
+      <div class="log-dot" style="background:${l.success ? "#059669" : "#dc2626"};"></div>
+      <div class="flex-grow-1">
+        <div class="small fw-500">${l.email || "Unknown"}</div>
+        <div class="text-muted" style="font-size:.78rem;">
+          <i class="bi bi-geo-alt me-1"></i>${l.ip}
+          &nbsp;·&nbsp;
+          <i class="bi bi-${l.success ? "check-circle text-success" : "x-circle text-danger"} me-1"></i>${l.success ? "Success" : "Failed"}
+        </div>
+      </div>
+      <div class="log-time">${timeSince(l.timestamp)}</div>
+    </div>
+  `).join("");
+}
+
+/* ─── PAGE SWITCHING ─────────────────────────────────────────── */
+const pages = {
+  "dashboard"   : "page-dashboard",
+  "profile"     : "page-profile",
+  "activity"    : "page-activity",
+  "refresh"     : "page-refresh",
+  "admin-users" : "page-admin-users",
+  "admin-log"   : "page-admin-log",
+};
+
+const titles = {
+  "dashboard"   : "Dashboard",
+  "profile"     : "My Profile",
+  "activity"    : "Login Activity",
+  "refresh"     : "Refresh Token",
+  "admin-users" : "Manage Users",
+  "admin-log"   : "Login Logs",
+};
+
+function switchPage(key, linkEl) {
+  Object.values(pages).forEach(p => document.getElementById(p)?.classList.add("d-none"));
+  document.getElementById(pages[key])?.classList.remove("d-none");
+  document.getElementById("topbar-title").textContent = titles[key] || key;
+
+  document.querySelectorAll(".sidebar-nav .nav-link").forEach(l => l.classList.remove("active"));
+  if (linkEl) linkEl.classList.add("active");
+
+  // Lazy-load data
+  if (key === "profile")     loadProfile();
+  if (key === "activity")    loadMyActivity();
+  if (key === "admin-users") loadAdminDash();
+  if (key === "admin-log")   loadAdminLog();
+  if (key === "refresh") {
+    const el = document.getElementById("manual-refresh-token");
+    if (el && state.refreshToken) el.value = state.refreshToken;
+  }
+
+  // Close mobile sidebar
+  document.getElementById("sidebar")?.classList.remove("open");
+}
+
+/* ─── ENTER DASHBOARD ────────────────────────────────────────── */
+function enterDashboard() {
+  document.getElementById("auth-view").classList.add("d-none");
+  document.getElementById("dashboard-view").classList.remove("d-none");
+  switchPage("dashboard", document.querySelector(".sidebar-nav .nav-link"));
+}
+
+/* ─── ENTER KEY ON AUTH FORMS ────────────────────────────────── */
+document.addEventListener("keydown", e => {
+  if (e.key !== "Enter") return;
+  if (!document.getElementById("login-screen")?.classList.contains("d-none")) doLogin();
+  else if (!document.getElementById("register-screen")?.classList.contains("d-none")) doRegister();
+  else if (!document.getElementById("forgot-screen")?.classList.contains("d-none")) doForgot();
+  else if (!document.getElementById("reset-screen")?.classList.contains("d-none")) doReset();
+});
 </script>
 </body>
 </html>
